@@ -1,0 +1,167 @@
+<!--Programmer: Chris Tralie!-->
+<!--Purpose: Front end ray/circle chooser / debugger for ray intersect circle function!-->
+<html>
+<head>
+<!-- This is how you include external scripts in Javascript !-->
+<script src= "gl-matrix-min.js"></script>
+<script src = "geomprimitives.js"></script>
+<script src = "guitools.js"></script>
+<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+
+<h2><a name = "raysphere">Circles Intersecting</h2>
+
+<table>
+<tr>
+<td width = "200">
+<table border = "1" cellpadding = 2>
+    <tr><td colspan="2"><button type = "button" onclick = "selectCircle1()" id="selectingCircle1">Select Circle 1</button></td></tr>
+    <tr><td align = "right"><font color = "#0000ff"><b>c</b></font></td><td><div id="c1">Not Selected</div></td></tr>
+    <tr><td align = "right"><font color = "#000000"><b>r</b></font></td><td><div id="r1">Not specified</div></td></tr>
+    <tr><td colspan="2"><button type = "button" onclick = "selectCircle2()" id="selectingCircle2">Select Circle 2</button></td></tr>
+    <tr><td align = "right"><font color = "#0000ff"><b>c</b></font></td><td><div id="c2">Not Selected</div></td></tr>
+    <tr><td align = "right"><font color = "#000000"><b>r</b></font></td><td><div id="r2">Not specified</div></td></tr>
+    <tr><td align = "right"><font color = "black">Intersection</font></td><td><div id="Intersection"></div></td></tr>
+</table>
+</td>
+<td>
+<canvas id = "segcanvas" width = "600" height = "600" style="border:1px solid #000000;">
+</canvas>
+</td>
+</tr>
+</table>
+
+<script>
+let c1 = null;
+let c2 = null;
+let v = null;
+let c = null;
+let r1 = 0.0;
+let r2 = 0.0;
+let intersection = [];
+let selectingCircle1 = true;
+
+let circle1Button = document.getElementById("selectingCircle1");
+let circle2Button = document.getElementById("selectingCircle2");
+let intersectionText = document.getElementById("Intersection");
+
+let canvas = document.getElementById('segcanvas');
+let ctx = canvas.getContext("2d"); //For drawing
+//Need this to disable that annoying menu that pops up on right click
+canvas.addEventListener("contextmenu", function(e){ e.stopPropagation(); e.preventDefault(); return false; }); 
+
+colors = ["#ff0000", "#ff00ff", "#0000ff", "#00aa00", "#aaaa00", "#00aaaa"];
+
+
+function selectCircle1() {
+    selectingCircle1 = true;
+    circle1Button.style.background = "#bb1111";
+    circle2Button.style.background = "#bfbfbf";
+}
+
+function selectCircle2() {
+    selectingCircle1 = false;
+    circle1Button.style.background = "#bfbfbf";
+    circle2Button.style.background = "#bb1111";
+}
+
+selectCircle1();
+
+
+function repaint() {
+    let dW = 5;
+    let W = canvas.width;
+    let H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw circle and center
+    if (!(c1 === null)) {
+        ctx.beginPath();
+        ctx.strokeStyle = "black";
+        ctx.moveTo(c1[0]+r1, c1[1]);
+        ctx.arc(c1[0], c1[1], r1, 0, 2*Math.PI);
+        ctx.stroke();
+        ctx.fillStyle = colors[0];
+        ctx.fillRect(c1[0]-dW, c1[1]-dW, dW*2+1, dW*2+1);
+    }
+
+    // Draw circle and center
+    if (!(c2 === null)) {
+        ctx.beginPath();
+        ctx.strokeStyle = "black";
+        ctx.moveTo(c2[0]+r2, c2[1]);
+        ctx.arc(c2[0], c2[1], r2, 0, 2*Math.PI);
+        ctx.stroke();
+        ctx.fillStyle = colors[1];
+        ctx.fillRect(c2[0]-dW, c2[1]-dW, dW*2+1, dW*2+1);
+    }
+
+
+}
+
+
+function selectPoint(evt) {
+    let mousePos = getMousePos(canvas, evt);
+    let X = mousePos.X;
+    let Y = mousePos.Y
+    let clickType = "LEFT";
+	evt.preventDefault();
+	if (evt.which) {
+	    if (evt.which == 3) clickType = "RIGHT";
+	    if (evt.which == 2) clickType = "MIDDLE";
+	}
+	else if (evt.button) {
+	    if (evt.button == 2) clickType = "RIGHT";
+	    if (evt.button == 4) clickType = "MIDDLE";
+	}
+    
+    if (clickType == "LEFT") {
+        if (selectingCircle1) {
+            c1 = vec3.fromValues(X, Y, 0);
+            document.getElementById("c1").innerHTML = "(" + c1[0].toFixed(0) + ", " + c1[1].toFixed(0) + ")";
+        }
+        else {
+            c2 = vec3.fromValues(X, Y, 0);
+            document.getElementById("c2").innerHTML = "(" + c2[0].toFixed(0) + ", " + c2[1].toFixed(0) + ")";
+        }
+    }
+    else {
+        let v = vec3.fromValues(X, Y, 0);
+        let c = c1;
+        if (!selectingCircle1) {
+            c = c2;
+        }
+        if (!(c === null)) {
+            vec3.subtract(v, v, c);
+            r = vec3.dot(v, v);
+            r = Math.sqrt(r);
+            if (selectingCircle1) {
+                r1 = r;
+                document.getElementById("r1").innerHTML = r.toFixed(2);
+            }
+            else {
+                r2 = r;
+                document.getElementById("r2").innerHTML = r.toFixed(2);
+            }
+        }
+    }
+    if (!(c1 === null) && !(c2 === null)) {
+        intersectionText.innerHTML = ""+circlesIntersect(c1, r1, c2, r2);
+    }
+    else {
+        intersectionText.innerHTML = "";
+    }
+    
+    repaint();
+}
+
+canvas.addEventListener("mousedown", selectPoint);
+canvas.addEventListener("touchstart", selectPoint); //Works on mobile devices!
+repaint();
+
+</script>
+
+
+</body>
+</html>
